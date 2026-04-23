@@ -1,0 +1,109 @@
+{
+  "entities": {
+    "Room": {
+      "title": "Room",
+      "description": "Luxury accommodation details",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "price", "description"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "Hotel and culinary event",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "date": { "type": "string" },
+        "category": { "type": "string", "enum": ["Hospitality", "Culinary", "Private", "Other"] },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "date", "category", "description"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "Professional culinary or hospitality service",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "category": { "type": "string", "enum": ["Catering", "Nutrition", "Mobile Food", "Shopping", "Market", "Tutorial", "Other"] },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "category", "description"]
+    },
+    "AcademyModule": {
+      "title": "Academy Module",
+      "description": "Culinary academy training module",
+      "type": "object",
+      "properties": {
+        "moduleNumber": { "type": "number" },
+        "title": { "type": "string" },
+        "outcome": { "type": "string" },
+        "lessons": { "type": "array", "items": { "type": "string" } },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["moduleNumber", "title", "outcome", "lessons"]
+    },
+    "SiteSettings": {
+      "title": "Site Settings",
+      "description": "General brand and site configuration",
+      "type": "object",
+      "properties": {
+        "brandName": { "type": "string" },
+        "tagline": { "type": "string" },
+        "location": { "type": "string" },
+        "description": { "type": "string" },
+        "vision": { "type": "string" },
+        "mission": { "type": "string" },
+        "tiktokHandle": { "type": "string" },
+        "instagramHandle": { "type": "string" },
+        "heroImageUrl": { "type": "string" },
+        "aboutImageUrl": { "type": "string" }
+      }
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Room booking request",
+      "type": "object",
+      "properties": {
+        "checkIn": { "type": "string" },
+        "checkOut": { "type": "string" },
+        "roomType": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["checkIn", "checkOut", "roomType", "status"]
+    },
+    "ContactMessage": {
+      "title": "Contact Message",
+      "description": "User message from contact form",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "message"]
+    }
+  },
+  "firestore": {
+    "rooms": { "schema": "Room", "description": "Collection of all rooms available for booking" },
+    "events": { "schema": "Event", "description": "Collection of all upcoming events" },
+    "services": { "schema": "Service", "description": "Collection of professional services offered" },
+    "academy": { "schema": "AcademyModule", "description": "Culinary academy modules" },
+    "siteSettings": { "schema": "SiteSettings", "description": "Global site settings" },
+    "bookings": { "schema": "Booking", "description": "User room bookings" },
+    "messages": { "schema": "ContactMessage", "description": "Incoming contact form messages" }
+  }
+}
