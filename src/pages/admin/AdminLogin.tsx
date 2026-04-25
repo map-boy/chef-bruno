@@ -1,9 +1,9 @@
 // FILE: src/pages/admin/AdminLogin.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, googleProvider, OWNER_EMAIL } from '../../firebase';
+import { auth, googleProvider, ADMIN_EMAILS } from '../../firebase';
 import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { LogIn, Hotel, ShieldAlert, Loader2 } from 'lucide-react';
+import { Hotel, ShieldAlert, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 const AdminLogin = () => {
@@ -14,8 +14,8 @@ const AdminLogin = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        if (user.email === OWNER_EMAIL) {
-          navigate('/admin/rooms');
+        if (ADMIN_EMAILS.includes(user.email!)) {
+          navigate('/admin/dashboard');
         } else {
           setError('Access Denied: You are not authorized to view this panel.');
           signOut(auth);
@@ -40,7 +40,6 @@ const AdminLogin = () => {
 
   return (
     <div className="min-h-screen bg-stone-950 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      {/* Background Decor */}
       <div className="absolute top-0 left-0 w-full h-full opacity-10">
          <div className="absolute -top-24 -left-24 w-96 h-96 bg-amber-600 rounded-full blur-[100px]"></div>
          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-amber-600 rounded-full blur-[100px]"></div>

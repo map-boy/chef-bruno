@@ -3,14 +3,21 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import emailjs from '@emailjs/browser';
 import { MapPin, Phone, Mail, Instagram, Send, CheckCircle2, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+
 
 interface ContactFormData {
   name: string;
   email: string;
   message: string;
 }
+
+// 🔑 Replace these with your actual EmailJS credentials
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
 const Contact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,10 +31,24 @@ const Contact = () => {
   const onSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
     try {
+      // Save to Firestore
       await addDoc(collection(db, 'messages'), {
         ...data,
         createdAt: serverTimestamp(),
       });
+
+      // Send email to admin Gmail
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          name: data.name,
+          email: data.email,
+          message: data.message,
+        },
+        EMAILJS_PUBLIC_KEY
+      );
+
       setIsSubmitted(true);
       reset();
       setTimeout(() => setIsSubmitted(false), 5000);

@@ -26,6 +26,7 @@ import AdminAcademy from './pages/admin/AdminAcademy';
 import AdminServices from './pages/admin/AdminServices';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminMediaHelp from './pages/admin/AdminMediaHelp';
+import AdminDashboard from './pages/admin/AdminDashboard';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -43,20 +44,21 @@ const AppContent = () => {
       {!isAdminPage && <Navbar />}
       <main className="flex-grow">
         <Routes>
-          <Route path="/"        element={<Home />} />
-          <Route path="/rooms"   element={<Rooms />} />
-          <Route path="/academy" element={<CulinaryAcademy />} />
-          <Route path="/events"  element={<Events />} />
+          <Route path="/"         element={<Home />} />
+          <Route path="/rooms"    element={<Rooms />} />
+          <Route path="/academy"  element={<CulinaryAcademy />} />
+          <Route path="/events"   element={<Events />} />
           <Route path="/services" element={<Services />} />
-          <Route path="/about"   element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/book"    element={<BookNow />} />
-          <Route path="/videos"  element={<Videos />} />
-          <Route path="/books"   element={<Books />} />
-          <Route path="/blog"    element={<Blog />} />
+          <Route path="/about"    element={<About />} />
+          <Route path="/contact"  element={<Contact />} />
+          <Route path="/book"     element={<BookNow />} />
+          <Route path="/videos"   element={<Videos />} />
+          <Route path="/books"    element={<Books />} />
+          <Route path="/blog"     element={<Blog />} />
 
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard"  element={<AdminDashboard />} />
             <Route path="rooms"      element={<AdminRooms />} />
             <Route path="events"     element={<AdminEvents />} />
             <Route path="academy"    element={<AdminAcademy />} />

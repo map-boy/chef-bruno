@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import { AcademyModule } from '../types';
-import { seedModules } from '../data/seedData';
 
 export const useAcademy = () => {
   const [modules, setModules] = useState<AcademyModule[]>([]);
@@ -12,22 +11,14 @@ export const useAcademy = () => {
 
   useEffect(() => {
     const q = query(collection(db, 'academy'), orderBy('moduleNumber', 'asc'));
-    
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const moduleData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as AcademyModule[];
-      
-      setModules(moduleData.length > 0 ? moduleData : seedModules);
+      setModules(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AcademyModule[]);
       setLoading(false);
     }, (err) => {
       console.error('Error fetching academy modules:', err);
       setError(err.message);
       setLoading(false);
-      if (modules.length === 0) setModules(seedModules);
     });
-
     return () => unsubscribe();
   }, []);
 

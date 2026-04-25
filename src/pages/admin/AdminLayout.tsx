@@ -1,10 +1,10 @@
 // FILE: src/pages/admin/AdminLayout.tsx
 import React, { useEffect, useState } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { auth, OWNER_EMAIL } from '../../firebase';
+import { auth, ADMIN_EMAILS } from '../../firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { 
-  LayoutDashboard, 
+  LayoutDashboard,
   Bed, 
   Calendar, 
   BookOpen, 
@@ -17,7 +17,17 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
+
+const menuItems = [
+  { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/admin/dashboard' },
+  { name: 'Rooms', icon: <Bed size={20} />, path: '/admin/rooms' },
+  { name: 'Events', icon: <Calendar size={20} />, path: '/admin/events' },
+  { name: 'Academy', icon: <BookOpen size={20} />, path: '/admin/academy' },
+  { name: 'Services', icon: <Utensils size={20} />, path: '/admin/services' },
+  { name: 'Global Settings', icon: <Settings size={20} />, path: '/admin/settings' },
+  { name: 'Media Help', icon: <HelpCircle size={20} />, path: '/admin/media-help' },
+];
 
 const AdminLayout = () => {
   const [loading, setLoading] = useState(true);
@@ -27,7 +37,7 @@ const AdminLayout = () => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user || user.email !== OWNER_EMAIL) {
+      if (!user || !ADMIN_EMAILS.includes(user.email!)) {
         navigate('/admin/login');
       } else {
         setLoading(false);
@@ -44,14 +54,8 @@ const AdminLayout = () => {
     );
   }
 
-  const menuItems = [
-    { name: 'Rooms', icon: <Bed size={20} />, path: '/admin/rooms' },
-    { name: 'Events', icon: <Calendar size={20} />, path: '/admin/events' },
-    { name: 'Academy', icon: <BookOpen size={20} />, path: '/admin/academy' },
-    { name: 'Services', icon: <Utensils size={20} />, path: '/admin/services' },
-    { name: 'Global Settings', icon: <Settings size={20} />, path: '/admin/settings' },
-    { name: 'Media Help', icon: <HelpCircle size={20} />, path: '/admin/media-help' },
-  ];
+  const currentUser = auth.currentUser;
+  const isOwner = currentUser?.email === 'shimirwabruno1@gmail.com';
 
   return (
     <div className="min-h-screen bg-stone-50 flex overflow-hidden">
@@ -62,7 +66,6 @@ const AdminLayout = () => {
         }`}
       >
         <div className="h-full flex flex-col">
-          {/* Header */}
           <div className="p-6 border-b border-stone-800 flex items-center justify-between">
             <Link to="/" className="flex flex-col whitespace-nowrap overflow-hidden">
               <span className="text-xl font-serif font-bold text-white leading-none">Management</span>
@@ -76,8 +79,7 @@ const AdminLayout = () => {
             </button>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-grow py-8 px-3 overflow-y-auto custom-scrollbar">
+          <nav className="flex-grow py-8 px-3 overflow-y-auto">
             <div className="space-y-2">
               {menuItems.map((item) => {
                 const isActive = location.pathname === item.path;
@@ -106,7 +108,6 @@ const AdminLayout = () => {
             </div>
           </nav>
 
-          {/* User Section */}
           <div className="p-6 border-t border-stone-800">
              <button
                onClick={() => signOut(auth)}
@@ -121,7 +122,6 @@ const AdminLayout = () => {
 
       {/* Main Area */}
       <main className="flex-grow flex flex-col h-screen overflow-hidden">
-        {/* Top Navbar */}
         <header className="h-20 bg-white border-b border-stone-200 px-6 flex items-center justify-between shrink-0">
            <div className="flex items-center gap-4">
               <button 
@@ -137,17 +137,23 @@ const AdminLayout = () => {
            
            <div className="flex items-center gap-6">
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-stone-900 leading-none">Shimirwa Bruno</p>
-                <p className="text-[10px] text-stone-400 uppercase tracking-widest font-bold mt-1">Super Admin</p>
+                <p className="text-xs font-bold text-stone-900 leading-none">
+                  {currentUser?.displayName || 'Admin'}
+                </p>
+                <p className="text-[10px] text-stone-400 uppercase tracking-widest font-bold mt-1">
+                  {isOwner ? 'Owner' : 'Developer'}
+                </p>
               </div>
               <div className="w-10 h-10 rounded-full bg-stone-900 border-2 border-stone-100 flex items-center justify-center text-amber-500 font-bold overflow-hidden shadow-inner">
-                <img src={auth.currentUser?.photoURL || ''} alt="Profile" className="w-full h-full object-cover" />
+                {currentUser?.photoURL 
+                  ? <img src={currentUser.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                  : <span className="text-sm font-bold">{currentUser?.displayName?.[0] || 'A'}</span>
+                }
               </div>
            </div>
         </header>
 
-        {/* Content Body */}
-        <div className="flex-grow overflow-y-auto p-6 md:p-10 bg-stone-50 custom-scrollbar pb-24">
+        <div className="flex-grow overflow-y-auto p-6 md:p-10 bg-stone-50 pb-24">
            <Outlet />
         </div>
       </main>

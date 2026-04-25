@@ -15,12 +15,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-export const db = getFirestore(app, import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || '(default)');
+export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// ✅ FIXED: Correct admin email from docx
-export const OWNER_EMAIL = 'mawandatoi@gmail.com';
+export const ADMIN_EMAILS = [
+  'shimirwabruno1@gmail.com',  // Owner - Chef Bruno
+  'umwemubi@gmail.com',         // Developer - You
+];
 
 export default app;
