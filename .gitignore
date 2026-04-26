@@ -15,6 +15,7 @@ coverage/
 firebase-applet-config.json
 
 # ── Android build artifacts ───────────────────────────────
+android/
 android/.gradle/
 android/build/
 android/app/build/
