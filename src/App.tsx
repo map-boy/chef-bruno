@@ -16,17 +16,26 @@ import BookNow from './pages/BookNow';
 import Videos from './pages/Videos';
 import Books from './pages/Books';
 import Blog from './pages/Blog';
+import Classes from './pages/Classes';
+import ClassRoom from './pages/ClassRoom';
+import NotFound from './pages/NotFound';
 
 // Admin
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './pages/admin/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRooms from './pages/admin/AdminRooms';
 import AdminEvents from './pages/admin/AdminEvents';
 import AdminAcademy from './pages/admin/AdminAcademy';
 import AdminServices from './pages/admin/AdminServices';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminMediaHelp from './pages/admin/AdminMediaHelp';
-import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminBookings from './pages/admin/AdminBookings';
+import AdminMessages from './pages/admin/AdminMessages';
+import AdminClasses from './pages/admin/AdminClasses';
+import AdminBlog from './pages/admin/AdminBlog';
+import AdminBooks from './pages/admin/AdminBooks';
+import AdminVideos from './pages/admin/AdminVideos';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -37,38 +46,49 @@ const ScrollToTop = () => {
 const AppContent = () => {
   const location = useLocation();
   const isAdminPage = location.pathname.startsWith('/admin');
+  const isClassRoom = location.pathname.startsWith('/classes/');
 
   return (
     <div className="flex flex-col min-h-screen">
       <ScrollToTop />
-      {!isAdminPage && <Navbar />}
+      {!isAdminPage && !isClassRoom && <Navbar />}
       <main className="flex-grow">
         <Routes>
-          <Route path="/"         element={<Home />} />
-          <Route path="/rooms"    element={<Rooms />} />
-          <Route path="/academy"  element={<CulinaryAcademy />} />
-          <Route path="/events"   element={<Events />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/about"    element={<About />} />
-          <Route path="/contact"  element={<Contact />} />
-          <Route path="/book"     element={<BookNow />} />
-          <Route path="/videos"   element={<Videos />} />
-          <Route path="/books"    element={<Books />} />
-          <Route path="/blog"     element={<Blog />} />
+          <Route path="/"            element={<Home />} />
+          <Route path="/rooms"       element={<Rooms />} />
+          <Route path="/academy"     element={<CulinaryAcademy />} />
+          <Route path="/events"      element={<Events />} />
+          <Route path="/services"    element={<Services />} />
+          <Route path="/about"       element={<About />} />
+          <Route path="/contact"     element={<Contact />} />
+          <Route path="/book"        element={<BookNow />} />
+          <Route path="/videos"      element={<Videos />} />
+          <Route path="/books"       element={<Books />} />
+          <Route path="/blog"        element={<Blog />} />
+          <Route path="/classes"     element={<Classes />} />
+          <Route path="/classes/:id" element={<ClassRoom />} />
 
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="dashboard"  element={<AdminDashboard />} />
+            <Route path="bookings"   element={<AdminBookings />} />
+            <Route path="messages"   element={<AdminMessages />} />
             <Route path="rooms"      element={<AdminRooms />} />
             <Route path="events"     element={<AdminEvents />} />
             <Route path="academy"    element={<AdminAcademy />} />
             <Route path="services"   element={<AdminServices />} />
+            <Route path="classes"    element={<AdminClasses />} />
+            <Route path="blog"       element={<AdminBlog />} />
+            <Route path="books"      element={<AdminBooks />} />
+            <Route path="videos"     element={<AdminVideos />} />
             <Route path="settings"   element={<AdminSettings />} />
             <Route path="media-help" element={<AdminMediaHelp />} />
           </Route>
+
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
-      {!isAdminPage && <Footer />}
+      {!isAdminPage && !isClassRoom && <Footer />}
     </div>
   );
 };

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Chef Bruno</string>
+    <string name="title_activity_main">Chef Bruno</string>
+    <string name="package_name">com.chefbruno.app</string>
+    <string name="custom_url_scheme">com.chefbruno.app</string>
+</resources>

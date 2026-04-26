@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "64152890922",
+    "project_id": "chef-bruno-a51bb",
+    "storage_bucket": "chef-bruno-a51bb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:64152890922:android:4ca122e6eaa0b07ef95d53",
+        "android_client_info": {
+          "package_name": "com.chefbruno.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "64152890922-gictjepfq5psklhjj439mel6o9eljiqe.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyChgLyL3lih5WipeZW7xi5AJdLkYbiEFYY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "64152890922-gictjepfq5psklhjj439mel6o9eljiqe.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

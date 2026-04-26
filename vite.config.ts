@@ -1,10 +1,16 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig, loadEnv} from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 
-export default defineConfig(({mode}) => {
+export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
+
+  // Detect which build target via APP_BUILD env var
+  // npm run build      → web  (src/       → dist/)
+  // npm run build:app  → app  (src-app/   → dist-app/)
+  const isAppBuild = process.env.APP_BUILD === 'true';
+
   return {
     plugins: [react(), tailwindcss()],
     define: {
@@ -15,9 +21,30 @@ export default defineConfig(({mode}) => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    root: '.',
+    // App build uses index-app.html as entry point
+    ...(isAppBuild && {
+      build: {
+        rollupOptions: {
+          input: { index: path.resolve(__dirname, 'index-app.html') },
+          output: {
+            entryFileNames: 'assets/[name]-[hash].js',
+            chunkFileNames: 'assets/[name]-[hash].js',
+            assetFileNames: 'assets/[name]-[hash][extname]',
+          },
+        },
+        outDir: 'dist-app',
+        emptyOutDir: true,
+      },
+    }),
+    // Web build uses default index.html → dist/
+    ...(!isAppBuild && {
+      build: {
+        outDir: 'dist',
+        emptyOutDir: true,
+      },
+    }),
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
     },
   };

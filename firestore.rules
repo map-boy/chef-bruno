@@ -1,71 +1,27 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isAdmin() {
-      return request.auth != null && 
-        request.auth.token.email in [
-          'shimirwabruno1@gmail.com',
-          'umwemubi@gmail.com'
-        ];
-    }
-    match /{document=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-  }
-}
-    // Helper functions
-    function isSignedIn() {
-      return request.auth != null;
-    }
 
     function isAdmin() {
-      return isSignedIn() && 
-             request.auth.token.email == 'shimirwabruno1@gmail.com' && 
-             request.auth.token.email_verified == true;
+      return request.auth != null &&
+             request.auth.token.email in ['shimirwabruno1@gmail.com', 'umwemubi@gmail.com'];
     }
 
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
+    match /rooms/{id}      { allow read: if true; allow write: if isAdmin(); }
+    match /events/{id}     { allow read: if true; allow write: if isAdmin(); }
+    match /services/{id}   { allow read: if true; allow write: if isAdmin(); }
+    match /academy/{id}    { allow read: if true; allow write: if isAdmin(); }
+    match /classes/{id}    { allow read: if true; allow write: if isAdmin(); }
+    match /siteSettings/{id} { allow read: if true; allow write: if isAdmin(); }
 
-    // Publicly readable collections
-    match /rooms/{roomId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /events/{eventId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /services/{serviceId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /academy/{moduleId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /siteSettings/main {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // Publicly writable (create only) collections
-    match /bookings/{bookingId} {
-      allow read: if isAdmin();
+    match /bookings/{id} {
       allow create: if true;
-      allow update, delete: if isAdmin();
+      allow read, update, delete: if isAdmin();
     }
 
-    match /messages/{messageId} {
-      allow read: if isAdmin();
+    match /messages/{id} {
       allow create: if true;
-      allow update, delete: if isAdmin();
+      allow read, update, delete: if isAdmin();
     }
   }
 }
