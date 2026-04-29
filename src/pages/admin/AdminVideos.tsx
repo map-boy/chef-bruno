@@ -5,7 +5,7 @@ import {
   collection, onSnapshot, query, orderBy,
   addDoc, deleteDoc, doc, serverTimestamp, updateDoc
 } from 'firebase/firestore';
-import { Film, Plus, Trash2, X, Loader2 } from 'lucide-react';
+import { Film, Plus, Trash2, X, Loader2, Link as LinkIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const CATEGORIES = ['Brand', 'Tutorial', 'Education', 'Business', 'Inspiration'];
@@ -20,11 +20,12 @@ interface VideoForm {
   goal: string;
   category: string;
   duration: string;
+  videoUrl: string;
 }
 
 const empty: VideoForm = {
   title: '', description: '', hook: '', body: '', cta: '',
-  audience: '', goal: '', category: 'Tutorial', duration: '5–8 min'
+  audience: '', goal: '', category: 'Tutorial', duration: '5–8 min', videoUrl: ''
 };
 
 const AdminVideos = () => {
@@ -47,7 +48,18 @@ const AdminVideos = () => {
   const openCreate = () => { setEditing(null); setForm(empty); setShowForm(true); };
   const openEdit = (v: any) => {
     setEditing(v.id);
-    setForm({ title: v.title, description: v.description, hook: v.hook, body: v.body, cta: v.cta, audience: v.audience, goal: v.goal, category: v.category, duration: v.duration });
+    setForm({
+      title: v.title || '',
+      description: v.description || '',
+      hook: v.hook || '',
+      body: v.body || '',
+      cta: v.cta || '',
+      audience: v.audience || '',
+      goal: v.goal || '',
+      category: v.category || 'Tutorial',
+      duration: v.duration || '',
+      videoUrl: v.videoUrl || '',
+    });
     setShowForm(true);
   };
 
@@ -81,7 +93,7 @@ const AdminVideos = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
         <div>
           <h1 className="text-3xl font-serif font-bold text-stone-900 mb-2">Videos</h1>
-          <p className="text-stone-500 text-sm">Manage the video content series.</p>
+          <p className="text-stone-500 text-sm">Manage the video content series. Add a video URL so users can watch directly in the app.</p>
         </div>
         <button onClick={openCreate} className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-stone-800 transition-all">
           <Plus size={16} /> New Video
@@ -110,6 +122,23 @@ const AdminVideos = () => {
                     <textarea required rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
                       className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-lg text-sm outline-none focus:border-stone-900 resize-none" />
                   </div>
+
+                  {/* VIDEO URL — key new field */}
+                  <div className="col-span-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400 block mb-2">
+                      Video URL <span className="text-amber-600">(YouTube, Vimeo, or direct .mp4 link)</span>
+                    </label>
+                    <div className="relative">
+                      <LinkIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                      <input
+                        value={form.videoUrl}
+                        onChange={e => setForm({ ...form, videoUrl: e.target.value })}
+                        className="w-full pl-9 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-lg text-sm outline-none focus:border-stone-900"
+                        placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..." />
+                    </div>
+                    <p className="text-[10px] text-stone-400 mt-1">Paste the full video link. Users will tap Play to watch it in the app.</p>
+                  </div>
+
                   <div>
                     <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400 block mb-2">Category</label>
                     <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
@@ -177,9 +206,15 @@ const AdminVideos = () => {
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span className={`text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full ${categoryColors[v.category] || 'bg-stone-100 text-stone-600'}`}>{v.category}</span>
                 <span className="text-[10px] text-stone-400">{v.duration}</span>
+                {v.videoUrl && (
+                  <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                    <LinkIcon size={9} /> Has Video
+                  </span>
+                )}
               </div>
               <h3 className="font-serif font-bold text-stone-900 text-base mb-1">{v.title}</h3>
               <p className="text-stone-500 text-sm line-clamp-1">{v.description}</p>
+              {v.videoUrl && <p className="text-stone-400 text-[10px] mt-1 truncate">{v.videoUrl}</p>}
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button onClick={() => openEdit(v)} className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest border border-stone-200 rounded-lg hover:bg-stone-50 transition-all">Edit</button>

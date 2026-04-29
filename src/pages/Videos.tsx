@@ -1,34 +1,22 @@
 // FILE: src/pages/Videos.tsx
 import React, { useState, useEffect } from 'react';
-import { Play, Users, Target, ChevronRight, Film } from 'lucide-react';
+import { db } from '../firebase';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { Play, X, Film, Clock, Tag } from 'lucide-react';
 
 interface Video {
-  id: number;
+  id: string;
   title: string;
   description: string;
-  hook: string;
-  body: string;
-  cta: string;
-  audience: string;
-  goal: string;
-  category: 'Brand' | 'Tutorial' | 'Education' | 'Business' | 'Inspiration';
+  category: string;
   duration: string;
+  videoUrl: string;
+  thumbnail?: string;
+  hook?: string;
+  cta?: string;
 }
 
-const videos: Video[] = [
-  { id: 1, title: 'The Culinary Renaissance', description: 'An exploration of how digital tools are reshaping the culinary arts.', hook: 'The tools of the kitchen have never been more accessible.', body: 'Discuss the shift from traditional to modern gastronomy.', cta: 'Join the Chef Bruno community.', audience: 'Aspiring chefs', goal: 'Brand awareness and inspiration', category: 'Brand', duration: '8–12 min' },
-  { id: 2, title: 'Mastering the Perfect Sear', description: 'Practical tips for achieving the perfect crust on any protein.', hook: 'The sear is where the flavor lives.', body: '3 steps to a perfect crust.', cta: 'Download our cooking guide.', audience: 'Home cooks', goal: 'Establish authority in culinary techniques', category: 'Tutorial', duration: '5–8 min' },
-  { id: 3, title: 'AI in the Kitchen', description: 'How to integrate AI into your recipe development without losing the human touch.', hook: 'AI is not replacing the chef — it is augmenting the palate.', body: 'Show real-world examples of AI-assisted recipe creation.', cta: 'Sign up for our culinary workshop.', audience: 'Professional chefs', goal: 'Promote training programs', category: 'Education', duration: '10–15 min' },
-  { id: 4, title: 'The Architecture of a Dish', description: 'Breaking down the elements of world-class plate presentation.', hook: 'A dish is more than just food — it is a visual experience.', body: 'Discuss balance, color, and texture.', cta: 'Get a plating audit.', audience: 'Culinary students', goal: 'Lead generation for consulting', category: 'Tutorial', duration: '6–10 min' },
-  { id: 5, title: 'Food Styling in 60 Seconds', description: 'How to capture attention and deliver value in short-form food video.', hook: 'You have 3 seconds to make them hungry.', body: 'The lighting-angle-action framework.', cta: 'Follow for more tips.', audience: 'Food bloggers', goal: 'Engagement and growth', category: 'Tutorial', duration: '1–3 min' },
-  { id: 6, title: 'The Future of Culinary Education', description: 'Why self-directed digital learning is the new culinary school.', hook: 'The kitchen is now everywhere.', body: 'The rise of digital culinary certifications.', cta: 'Explore our courses.', audience: 'Lifelong learners', goal: 'Course sales', category: 'Education', duration: '8–12 min' },
-  { id: 7, title: 'Minimalism on the Plate', description: 'Why less is almost always more in modern plating.', hook: 'Clutter is the death of flavor clarity.', body: 'Principles of negative space and focus.', cta: 'View our portfolio.', audience: 'Restaurant owners', goal: 'Showcase culinary philosophy', category: 'Inspiration', duration: '5–7 min' },
-  { id: 8, title: 'Building a Culinary Legacy', description: 'How to create recipes and content that last longer than a food trend.', hook: 'Do not just chase viral recipes — build foundations.', body: 'Evergreen culinary strategies.', cta: 'Read our latest book.', audience: 'Food creators', goal: 'Book sales', category: 'Business', duration: '10–14 min' },
-  { id: 9, title: 'The Ethics of Sourcing', description: 'Navigating the responsibility of a modern chef in the global food system.', hook: 'With great flavor comes great responsibility.', body: 'Sustainability vs. Convenience.', cta: 'Join the discussion.', audience: 'Conscious consumers', goal: 'Community building', category: 'Inspiration', duration: '8–11 min' },
-  { id: 10, title: 'From Recipe to Restaurant', description: 'A step-by-step guide to launching your first culinary concept.', hook: 'Stop dreaming and start cooking.', body: 'The pop-up approach.', cta: 'Start your journey today.', audience: 'Food entrepreneurs', goal: 'Conversion to training', category: 'Business', duration: '12–18 min' },
-];
-
-const categoryColors: Record<Video['category'], string> = {
+const categoryColors: Record<string, string> = {
   Brand:       'bg-amber-600/20 text-amber-400 border-amber-600/40',
   Tutorial:    'bg-blue-600/20 text-blue-400 border-blue-600/40',
   Education:   'bg-emerald-600/20 text-emerald-400 border-emerald-600/40',
@@ -36,18 +24,131 @@ const categoryColors: Record<Video['category'], string> = {
   Inspiration: 'bg-rose-600/20 text-rose-400 border-rose-600/40',
 };
 
-const categories: Array<Video['category'] | 'All'> = ['All', 'Brand', 'Tutorial', 'Education', 'Business', 'Inspiration'];
+// Convert any YouTube URL to embed URL
+function toEmbedUrl(url: string): string | null {
+  if (!url) return null;
+
+  // Already an embed URL
+  if (url.includes('youtube.com/embed/')) return url;
+
+  // youtu.be/VIDEO_ID
+  const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (shortMatch) return `https://www.youtube.com/embed/${shortMatch[1]}?autoplay=1`;
+
+  // youtube.com/watch?v=VIDEO_ID
+  const watchMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if (watchMatch) return `https://www.youtube.com/embed/${watchMatch[1]}?autoplay=1`;
+
+  // YouTube Shorts
+  const shortsMatch = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+  if (shortsMatch) return `https://www.youtube.com/embed/${shortsMatch[1]}?autoplay=1`;
+
+  // Direct .mp4 or other video file — return as-is (will use <video> tag)
+  if (url.match(/\.(mp4|webm|ogg|mov)(\?|$)/i)) return url;
+
+  return null;
+}
+
+function isDirectVideo(url: string): boolean {
+  return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url);
+}
+
+const VideoModal: React.FC<{ video: Video; onClose: () => void }> = ({ video, onClose }) => {
+  const embedUrl = toEmbedUrl(video.videoUrl);
+  const direct = embedUrl ? isDirectVideo(embedUrl) : false;
+
+  // Close on backdrop click
+  const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm px-4"
+      onClick={handleBackdrop}
+    >
+      <div className="relative w-full max-w-4xl">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute -top-12 right-0 text-white/70 hover:text-white flex items-center gap-2 text-sm font-medium transition-colors"
+        >
+          <X size={18} /> Close
+        </button>
+
+        {/* Video container */}
+        <div className="relative w-full rounded-xl overflow-hidden shadow-2xl bg-black" style={{ aspectRatio: '16/9' }}>
+          {!embedUrl ? (
+            <div className="flex items-center justify-center h-full text-stone-400 text-sm">
+              No video URL available.
+            </div>
+          ) : direct ? (
+            <video
+              src={embedUrl}
+              controls
+              autoPlay
+              className="w-full h-full object-contain bg-black"
+            />
+          ) : (
+            <iframe
+              src={embedUrl}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title={video.title}
+            />
+          )}
+        </div>
+
+        {/* Video info below player */}
+        <div className="mt-4 text-white">
+          <h2 className="font-serif text-xl font-bold mb-1">{video.title}</h2>
+          {video.description && (
+            <p className="text-stone-400 text-sm leading-relaxed">{video.description}</p>
+          )}
+          {video.cta && (
+            <p className="mt-3 text-[#C9973A] text-sm font-medium">{video.cta}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Videos: React.FC = () => {
-  const [activeFilter, setActiveFilter] = useState<Video['category'] | 'All'>('All');
-  const [expanded, setExpanded] = useState<number | null>(null);
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<string>('All');
+  const [playing, setPlaying] = useState<Video | null>(null);
 
-  useEffect(() => { document.title = 'Video Content | Chef Bruno Hotel & Culinary Center'; }, []);
+  useEffect(() => {
+    document.title = 'Videos | Chef Bruno Hotel & Culinary Center';
+    const q = query(collection(db, 'videos'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, (snap) => {
+      setVideos(snap.docs.map(d => ({ id: d.id, ...d.data() } as Video)));
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
 
+  const categories = ['All', ...Array.from(new Set(videos.map(v => v.category).filter(Boolean)))];
   const filtered = activeFilter === 'All' ? videos : videos.filter(v => v.category === activeFilter);
 
   return (
     <div className="min-h-screen bg-[#FAF6EF]">
+      {/* Modal */}
+      {playing && <VideoModal video={playing} onClose={() => setPlaying(null)} />}
+
       {/* Hero */}
       <div className="bg-[#1A1A1A] pt-32 pb-20 px-6 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -56,100 +157,152 @@ const Videos: React.FC = () => {
         </div>
         <div className="max-w-5xl mx-auto relative z-10 text-center">
           <div className="inline-flex items-center gap-2 border border-amber-600/40 text-amber-500 px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-[0.3em] mb-8">
-            <Film size={12} /> Content Library
+            <Film size={12} /> Video Library
           </div>
           <h1 className="font-serif text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
-            Video Content <span className="text-[#C9973A]">Series</span>
+            Watch & <span className="text-[#C9973A]">Learn</span>
           </h1>
           <p className="text-stone-400 text-lg max-w-2xl mx-auto leading-relaxed">
-            Explore our planned video series — from culinary techniques to building a food business.
-            Crafted to inspire, educate, and transform aspiring chefs worldwide.
+            Culinary tutorials, techniques, and insights — watch everything right here without leaving the page.
           </p>
-          <div className="mt-8 flex items-center justify-center gap-6 text-stone-500 text-sm">
-            <span className="flex items-center gap-2"><Film size={14} /> 10 Episodes Planned</span>
-            <span className="w-1 h-1 bg-stone-600 rounded-full" />
-            <span>5 Categories</span>
-            <span className="w-1 h-1 bg-stone-600 rounded-full" />
-            <span>Coming Soon</span>
-          </div>
         </div>
       </div>
 
-      {/* Filter */}
-      <div className="sticky top-[64px] z-30 bg-white border-b border-stone-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex gap-3 overflow-x-auto">
-          {categories.map(cat => (
-            <button key={cat} onClick={() => setActiveFilter(cat)}
-              className={`shrink-0 px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${activeFilter === cat ? 'bg-[#1A1A1A] text-white border-[#1A1A1A]' : 'bg-transparent text-stone-500 border-stone-300 hover:border-stone-400'}`}>
-              {cat}
-            </button>
-          ))}
+      {/* Filter tabs */}
+      {categories.length > 1 && (
+        <div className="sticky top-[64px] z-30 bg-white border-b border-stone-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex gap-3 overflow-x-auto">
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setActiveFilter(cat)}
+                className={`shrink-0 px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${
+                  activeFilter === cat
+                    ? 'bg-[#1A1A1A] text-white border-[#1A1A1A]'
+                    : 'bg-transparent text-stone-500 border-stone-300 hover:border-stone-400'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Grid */}
       <div className="max-w-7xl mx-auto px-6 py-16">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((video) => (
-            <div key={video.id} className="bg-white rounded-xl overflow-hidden border border-stone-200 hover:border-amber-300 hover:shadow-xl transition-all duration-300 group">
-              <div className="relative h-48 bg-gradient-to-br from-stone-800 to-stone-950 flex items-center justify-center overflow-hidden">
-                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_center,_#C9973A,_transparent)]" />
-                <div className="relative z-10 text-center px-6">
-                  <div className="w-14 h-14 rounded-full bg-[#C9973A]/20 border-2 border-[#C9973A]/50 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                    <Play size={22} className="text-[#C9973A] ml-1" />
-                  </div>
-                  <p className="text-stone-400 text-[9px] uppercase tracking-widest font-bold">Episode {video.id}</p>
+        {loading ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1,2,3,4,5,6].map(i => (
+              <div key={i} className="bg-white rounded-xl overflow-hidden border border-stone-200 animate-pulse">
+                <div className="h-48 bg-stone-200" />
+                <div className="p-6 space-y-3">
+                  <div className="h-4 bg-stone-200 rounded w-3/4" />
+                  <div className="h-3 bg-stone-100 rounded w-full" />
+                  <div className="h-3 bg-stone-100 rounded w-2/3" />
                 </div>
-                <div className="absolute top-3 right-3">
-                  <span className={`text-[9px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${categoryColors[video.category]}`}>{video.category}</span>
-                </div>
-                <div className="absolute bottom-3 left-3 text-[9px] text-stone-400 font-bold uppercase tracking-wider">{video.duration}</div>
               </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-24">
+            <Film size={40} className="text-stone-300 mx-auto mb-4" />
+            <p className="text-stone-400 text-lg font-serif">No videos yet.</p>
+            <p className="text-stone-400 text-sm mt-2">Check back soon — new content is on the way.</p>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((video) => {
+              const hasVideo = !!video.videoUrl;
+              return (
+                <div
+                  key={video.id}
+                  className="bg-white rounded-xl overflow-hidden border border-stone-200 hover:border-amber-300 hover:shadow-xl transition-all duration-300 group cursor-pointer"
+                  onClick={() => hasVideo && setPlaying(video)}
+                >
+                  {/* Thumbnail / Play area */}
+                  <div className="relative h-48 bg-gradient-to-br from-stone-800 to-stone-950 flex items-center justify-center overflow-hidden">
+                    {video.thumbnail ? (
+                      <img src={video.thumbnail} alt={video.title} className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                    ) : (
+                      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_center,_#C9973A,_transparent)]" />
+                    )}
+                    <div className="relative z-10 text-center">
+                      <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto transition-transform duration-300 group-hover:scale-110 ${
+                        hasVideo
+                          ? 'bg-[#C9973A] shadow-lg shadow-amber-900/40'
+                          : 'bg-stone-700/60 border-2 border-stone-600'
+                      }`}>
+                        <Play size={22} className={`ml-1 ${hasVideo ? 'text-white' : 'text-stone-400'}`} />
+                      </div>
+                      {!hasVideo && (
+                        <p className="text-stone-500 text-[9px] uppercase tracking-widest font-bold mt-2">Coming Soon</p>
+                      )}
+                    </div>
+                    {/* Category badge */}
+                    {video.category && (
+                      <div className="absolute top-3 right-3">
+                        <span className={`text-[9px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${categoryColors[video.category] || 'bg-stone-700/40 text-stone-300 border-stone-600/40'}`}>
+                          {video.category}
+                        </span>
+                      </div>
+                    )}
+                    {/* Duration */}
+                    {video.duration && (
+                      <div className="absolute bottom-3 left-3 flex items-center gap-1 text-[9px] text-stone-300 font-bold uppercase tracking-wider">
+                        <Clock size={10} /> {video.duration}
+                      </div>
+                    )}
+                  </div>
 
-              <div className="p-6">
-                <h3 className="font-serif text-lg font-bold text-[#1A1A1A] mb-2 leading-snug group-hover:text-[#C9973A] transition-colors">{video.title}</h3>
-                <p className="text-stone-500 text-sm mb-4 leading-relaxed">{video.description}</p>
-                <blockquote className="border-l-2 border-[#C9973A] pl-3 mb-4 text-stone-600 text-xs italic leading-relaxed">"{video.hook}"</blockquote>
-                <div className="flex items-center gap-4 text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-4">
-                  <span className="flex items-center gap-1"><Users size={10} /> {video.audience}</span>
-                  <span className="flex items-center gap-1"><Target size={10} /> {video.goal}</span>
-                </div>
-                <button onClick={() => setExpanded(expanded === video.id ? null : video.id)}
-                  className="w-full flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-[#C9973A] hover:text-amber-700 transition-colors pt-4 border-t border-stone-100">
-                  {expanded === video.id ? 'Hide Details' : 'View Script Outline'}
-                  <ChevronRight size={14} className={`transition-transform ${expanded === video.id ? 'rotate-90' : ''}`} />
-                </button>
-                {expanded === video.id && (
-                  <div className="mt-4 space-y-3 text-sm">
-                    <div className="bg-stone-50 rounded-lg p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Script Body</p>
-                      <p className="text-stone-700">{video.body}</p>
-                    </div>
-                    <div className="bg-amber-50 rounded-lg p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 mb-1">Call to Action</p>
-                      <p className="text-stone-700 font-medium">{video.cta}</p>
+                  {/* Info */}
+                  <div className="p-6">
+                    <h3 className="font-serif text-lg font-bold text-[#1A1A1A] mb-2 leading-snug group-hover:text-[#C9973A] transition-colors">
+                      {video.title}
+                    </h3>
+                    {video.description && (
+                      <p className="text-stone-500 text-sm leading-relaxed mb-4">{video.description}</p>
+                    )}
+                    {video.hook && (
+                      <blockquote className="border-l-2 border-[#C9973A] pl-3 text-stone-600 text-xs italic leading-relaxed">
+                        "{video.hook}"
+                      </blockquote>
+                    )}
+                    {/* Watch button */}
+                    <div className={`mt-4 pt-4 border-t border-stone-100 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                      hasVideo ? 'text-[#C9973A]' : 'text-stone-300'
+                    }`}>
+                      <Play size={12} />
+                      {hasVideo ? 'Watch Now' : 'Coming Soon'}
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* CTA */}
+      {/* Bottom CTA */}
       <div className="bg-[#1A1A1A] py-20 px-6 text-center">
         <p className="text-stone-400 text-[10px] uppercase tracking-[0.4em] font-bold mb-4">Stay Updated</p>
-        <h2 className="font-serif text-3xl md:text-4xl text-white font-bold mb-6">Be the First to Watch</h2>
+        <h2 className="font-serif text-3xl md:text-4xl text-white font-bold mb-6">More Videos Coming</h2>
         <p className="text-stone-500 max-w-xl mx-auto mb-8 leading-relaxed">
-          Our video series is in production. Follow Chef Bruno on TikTok and Instagram for premiere announcements.
+          Follow Chef Bruno on social media for new video announcements and behind-the-scenes content.
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
-          <a href="https://tiktok.com/@shimirwabruno" target="_blank" rel="noopener noreferrer"
-            className="bg-[#C9973A] hover:bg-[#b08432] text-white px-8 py-4 text-[10px] font-bold uppercase tracking-widest transition-all">
+          <a
+            href="https://tiktok.com/@shimirwabruno"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-[#C9973A] hover:bg-[#b08432] text-white px-8 py-4 text-[10px] font-bold uppercase tracking-widest transition-all"
+          >
             Follow on TikTok
           </a>
-          <a href="/contact" className="border border-stone-600 hover:border-stone-400 text-stone-400 hover:text-white px-8 py-4 text-[10px] font-bold uppercase tracking-widest transition-all">
+          <a
+            href="/contact"
+            className="border border-stone-600 hover:border-stone-400 text-stone-400 hover:text-white px-8 py-4 text-[10px] font-bold uppercase tracking-widest transition-all"
+          >
             Contact Us
           </a>
         </div>

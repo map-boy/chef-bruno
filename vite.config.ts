@@ -6,9 +6,8 @@ import { defineConfig, loadEnv } from 'vite';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
 
-  // Detect which build target via APP_BUILD env var
-  // npm run build      → web  (src/       → dist/)
-  // npm run build:app  → app  (src-app/   → dist-app/)
+  // npm run build      → web  (src/     → dist/)
+  // npm run build:app  → app  (src-app/ → dist-app/)
   const isAppBuild = process.env.APP_BUILD === 'true';
 
   return {
@@ -22,11 +21,10 @@ export default defineConfig(({ mode }) => {
       },
     },
     root: '.',
-    // App build uses index-app.html as entry point
     ...(isAppBuild && {
       build: {
         rollupOptions: {
-          input: { index: path.resolve(__dirname, 'index-app.html') },
+          input: path.resolve(__dirname, 'index-app.html'),
           output: {
             entryFileNames: 'assets/[name]-[hash].js',
             chunkFileNames: 'assets/[name]-[hash].js',
@@ -37,7 +35,6 @@ export default defineConfig(({ mode }) => {
         emptyOutDir: true,
       },
     }),
-    // Web build uses default index.html → dist/
     ...(!isAppBuild && {
       build: {
         outDir: 'dist',
