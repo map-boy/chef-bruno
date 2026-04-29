@@ -7,7 +7,8 @@ import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { useAcademy } from '../hooks/useAcademy';
 import {
   BookOpen, Video, PenLine, BookMarked, GraduationCap,
-  ChevronRight, Clock, ArrowRight, Loader2, Star, Lock, Users, Calendar
+  ChevronRight, Clock, ArrowRight, Loader2, Star, Lock, Users, Calendar,
+  Play, X, ExternalLink
 } from 'lucide-react';
 
 type Tab = 'academy' | 'classes' | 'videos' | 'blog' | 'books';
@@ -20,7 +21,96 @@ const tabs: { id: Tab; label: string; icon: any }[] = [
   { id: 'books',    label: 'Books',    icon: BookMarked },
 ];
 
-// ── ACADEMY TAB ──────────────────────────────────────────────────────────────
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+function getYouTubeEmbedUrl(url: string): string | null {
+  if (!url) return null;
+  // youtu.be/ID
+  const short = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (short) return `https://www.youtube.com/embed/${short[1]}?autoplay=1`;
+  // youtube.com/watch?v=ID
+  const watch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if (watch) return `https://www.youtube.com/embed/${watch[1]}?autoplay=1`;
+  // youtube.com/shorts/ID or /embed/ID
+  const path = url.match(/youtube\.com\/(?:shorts|embed)\/([a-zA-Z0-9_-]{11})/);
+  if (path) return `https://www.youtube.com/embed/${path[1]}?autoplay=1`;
+  return null;
+}
+
+function isDirectVideo(url: string): boolean {
+  return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url);
+}
+
+// ── VIDEO PLAYER MODAL ────────────────────────────────────────────────────────
+const VideoModal: React.FC<{ video: any; onClose: () => void }> = ({ video, onClose }) => {
+  const embedUrl = video.videoUrl ? getYouTubeEmbedUrl(video.videoUrl) : null;
+  const isDirect = video.videoUrl ? isDirectVideo(video.videoUrl) : false;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-black/90 z-50 flex flex-col"
+        style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        {/* Close bar */}
+        <div className="flex items-center justify-between px-4 py-3 shrink-0" onClick={e => e.stopPropagation()}>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-sm leading-tight line-clamp-1">{video.title}</p>
+            {video.category && (
+              <p className="text-stone-400 text-[10px] uppercase tracking-widest mt-0.5">{video.category}</p>
+            )}
+          </div>
+          <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center ml-3 shrink-0 active:scale-90 transition-transform">
+            <X size={18} className="text-white" />
+          </button>
+        </div>
+
+        {/* Player */}
+        <div className="flex-1 flex items-center justify-center px-0" onClick={e => e.stopPropagation()}>
+          {embedUrl ? (
+            <iframe
+              src={embedUrl}
+              className="w-full"
+              style={{ aspectRatio: '16/9' }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title={video.title}
+            />
+          ) : isDirect ? (
+            <video
+              src={video.videoUrl}
+              controls
+              autoPlay
+              className="w-full"
+              style={{ aspectRatio: '16/9', maxHeight: '60vh' }}
+            />
+          ) : (
+            <div className="text-center px-8">
+              <Video size={48} className="text-stone-500 mx-auto mb-4" />
+              <p className="text-stone-400 text-sm mb-4">This video format cannot be played inline.</p>
+              <a href={video.videoUrl} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-[#C9973A] text-[#1A1A1A] font-bold text-[11px] uppercase tracking-widest rounded-xl">
+                <ExternalLink size={14} /> Open Video
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Description */}
+        {video.description && (
+          <div className="px-5 py-4 shrink-0" onClick={e => e.stopPropagation()}>
+            <p className="text-stone-300 text-sm leading-relaxed line-clamp-3">{video.description}</p>
+          </div>
+        )}
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+// ── ACADEMY TAB ───────────────────────────────────────────────────────────────
 const AcademyTab: React.FC = () => {
   const { modules, loading } = useAcademy();
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="animate-spin text-[#C9973A]" size={28} /></div>;
@@ -46,7 +136,7 @@ const AcademyTab: React.FC = () => {
               <p className="font-bold text-[#1A1A1A] text-sm">{mod.title}</p>
               <p className="text-stone-400 text-[11px] mt-1 leading-relaxed line-clamp-2">{mod.outcome}</p>
               <div className="flex flex-wrap gap-1 mt-2">
-                {mod.lessons.slice(0, 2).map(l => (
+                {mod.lessons.slice(0, 2).map((l: string) => (
                   <span key={l} className="bg-stone-100 text-stone-500 text-[9px] font-bold px-2 py-0.5 rounded-full">{l}</span>
                 ))}
                 {mod.lessons.length > 2 && (
@@ -64,7 +154,7 @@ const AcademyTab: React.FC = () => {
   );
 };
 
-// ── CLASSES TAB ──────────────────────────────────────────────────────────────
+// ── CLASSES TAB ───────────────────────────────────────────────────────────────
 const ClassesTab: React.FC = () => {
   const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +172,6 @@ const ClassesTab: React.FC = () => {
     <div className="text-center py-20 px-4">
       <Video size={40} className="text-stone-300 mx-auto mb-3" />
       <p className="text-stone-400 font-serif text-lg">No classes scheduled yet</p>
-      <p className="text-stone-400 text-sm mt-1">Check back soon for upcoming sessions.</p>
     </div>
   );
 
@@ -146,10 +235,12 @@ const ClassesTab: React.FC = () => {
   );
 };
 
-// ── VIDEOS TAB ───────────────────────────────────────────────────────────────
+// ── VIDEOS TAB ────────────────────────────────────────────────────────────────
 const VideosTab: React.FC = () => {
   const [videos, setVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [playing, setPlaying] = useState<any>(null);
+
   useEffect(() => {
     const q = query(collection(db, 'videos'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, snap => {
@@ -174,24 +265,51 @@ const VideosTab: React.FC = () => {
   );
 
   return (
-    <div className="px-4 pt-4 pb-4 space-y-3">
-      {videos.map((v, idx) => (
-        <motion.div key={v.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
-          className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm">
-          <div className="flex items-center gap-2 mb-2">
-            <span className={`text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full ${catColor[v.category] || 'bg-stone-100 text-stone-600'}`}>{v.category}</span>
-            <span className="text-stone-400 text-[10px]">{v.duration}</span>
-          </div>
-          <h3 className="font-serif font-bold text-[#1A1A1A] text-sm mb-1">{v.title}</h3>
-          <p className="text-stone-400 text-[12px] leading-relaxed line-clamp-2">{v.description}</p>
-          {v.hook && <p className="text-[#C9973A] text-[11px] italic mt-2 line-clamp-1">"{v.hook}"</p>}
-        </motion.div>
-      ))}
-    </div>
+    <>
+      {playing && <VideoModal video={playing} onClose={() => setPlaying(null)} />}
+      <div className="px-4 pt-4 pb-4 space-y-3">
+        {videos.map((v, idx) => {
+          const hasVideo = !!v.videoUrl;
+          return (
+            <motion.div key={v.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
+              onClick={() => hasVideo && setPlaying(v)}
+              className={`bg-white rounded-2xl overflow-hidden border border-stone-100 shadow-sm ${hasVideo ? 'active:scale-[0.98] transition-transform cursor-pointer' : ''}`}>
+              <div className="flex items-stretch">
+                {/* Thumbnail / Play button */}
+                <div className={`w-24 shrink-0 flex items-center justify-center relative ${hasVideo ? 'bg-[#1A1A1A]' : 'bg-stone-100'}`}>
+                  {hasVideo ? (
+                    <div className="w-10 h-10 rounded-full bg-[#C9973A] flex items-center justify-center">
+                      <Play size={16} className="text-[#1A1A1A] ml-0.5" fill="currentColor" />
+                    </div>
+                  ) : (
+                    <Video size={24} className="text-stone-300" />
+                  )}
+                  {!hasVideo && (
+                    <div className="absolute bottom-2 left-0 right-0 text-center">
+                      <span className="text-[8px] font-bold uppercase tracking-wider text-stone-400">Soon</span>
+                    </div>
+                  )}
+                </div>
+                {/* Info */}
+                <div className="flex-1 p-4">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className={`text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full ${catColor[v.category] || 'bg-stone-100 text-stone-600'}`}>{v.category}</span>
+                    {v.duration && <span className="text-stone-400 text-[10px]">{v.duration}</span>}
+                  </div>
+                  <h3 className="font-serif font-bold text-[#1A1A1A] text-sm mb-1 leading-snug">{v.title}</h3>
+                  <p className="text-stone-400 text-[11px] leading-relaxed line-clamp-2">{v.description}</p>
+                  {v.hook && <p className="text-[#C9973A] text-[10px] italic mt-1.5 line-clamp-1">"{v.hook}"</p>}
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </>
   );
 };
 
-// ── BLOG TAB ─────────────────────────────────────────────────────────────────
+// ── BLOG TAB ──────────────────────────────────────────────────────────────────
 const BlogTab: React.FC = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -258,7 +376,7 @@ const BlogTab: React.FC = () => {
   );
 };
 
-// ── BOOKS TAB ────────────────────────────────────────────────────────────────
+// ── BOOKS TAB ─────────────────────────────────────────────────────────────────
 const BooksTab: React.FC = () => {
   const [books, setBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

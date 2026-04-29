@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useRooms } from '../hooks/useRooms';
-import { Calendar as CalendarIcon, Hotel, Check, Info, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Hotel, Check, Info, Loader2, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import emailjs from '@emailjs/browser';
 
@@ -15,6 +15,7 @@ interface BookingFormData {
   roomType: string;
   guestName: string;
   email: string;
+  phone: string;
 }
 
 const BookNow = () => {
@@ -51,6 +52,7 @@ const BookNow = () => {
         {
           guest_name: data.guestName,
           guest_email: data.email,
+          guest_phone: data.phone,
           room_type: data.roomType,
           check_in: data.checkIn,
           check_out: data.checkOut,
@@ -155,6 +157,7 @@ const BookNow = () => {
                     onSubmit={handleSubmit(onSubmit)}
                     className="space-y-8"
                   >
+                    {/* Dates */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-3">
                         <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 block ml-1">Check-In Date</label>
@@ -182,6 +185,7 @@ const BookNow = () => {
                       </div>
                     </div>
 
+                    {/* Room */}
                     <div className="space-y-3">
                       <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 block ml-1">Select Your Room</label>
                       <select
@@ -198,6 +202,7 @@ const BookNow = () => {
                       {errors.roomType && <p className="text-red-500 text-xs ml-1">{errors.roomType.message}</p>}
                     </div>
 
+                    {/* Guest Info */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-stone-100">
                       <div className="space-y-3">
                         <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 block ml-1">Your Name</label>
@@ -217,6 +222,27 @@ const BookNow = () => {
                         />
                         {errors.email && <p className="text-red-500 text-xs ml-1">{errors.email.message}</p>}
                       </div>
+                    </div>
+
+                    {/* Phone Number — new field */}
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 block ml-1">Phone Number</label>
+                      <div className="relative">
+                        <Phone size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+                        <input
+                          {...register('phone', {
+                            required: 'Phone number is required',
+                            pattern: {
+                              value: /^[+\d\s\-()]{7,20}$/,
+                              message: 'Enter a valid phone number'
+                            }
+                          })}
+                          className="w-full pl-14 pr-6 py-4 bg-stone-50 border border-stone-200 outline-none focus:border-stone-900 rounded-sm text-sm"
+                          placeholder="+250 7XX XXX XXX"
+                          type="tel"
+                        />
+                      </div>
+                      {errors.phone && <p className="text-red-500 text-xs ml-1">{errors.phone.message}</p>}
                     </div>
 
                     <button
