@@ -4,7 +4,34 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { Loader2, ArrowLeft, Lock } from 'lucide-react';
-import DailyIframe from '@daily-co/daily-js';
+
+const DAILY_CDN = 'https://unpkg.com/@daily-co/daily-js@0.70.0/dist/daily-iframe.js';
+
+function loadDailyScript(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    // Already loaded
+    if ((window as any).DailyIframe) {
+      resolve((window as any).DailyIframe);
+      return;
+    }
+    // Remove any broken existing script
+    const existing = document.querySelector('script[data-daily]');
+    if (existing) existing.remove();
+
+    const script = document.createElement('script');
+    script.src = DAILY_CDN;
+    script.setAttribute('data-daily', 'true');
+    script.onload = () => {
+      if ((window as any).DailyIframe) {
+        resolve((window as any).DailyIframe);
+      } else {
+        reject(new Error('DailyIframe not found after script load'));
+      }
+    };
+    script.onerror = () => reject(new Error('Failed to load Daily.co script'));
+    document.head.appendChild(script);
+  });
+}
 
 const ClassRoom = () => {
   const { id } = useParams();
@@ -14,6 +41,7 @@ const ClassRoom = () => {
   const [name, setName] = useState('');
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [error, setError] = useState('');
   const frameRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -29,12 +57,18 @@ const ClassRoom = () => {
   const handleJoin = async () => {
     if (!name.trim() || !cls?.roomUrl) return;
     setJoining(true);
+    setError('');
     try {
+      // Destroy existing frame
       if (frameRef.current) {
-        frameRef.current.destroy();
+        try { frameRef.current.destroy(); } catch {}
         frameRef.current = null;
       }
-      const frame = DailyIframe.createFrame(containerRef.current!, {
+
+      // Load Daily.co from CDN
+      const DailyIframe = await loadDailyScript();
+
+      const frame = DailyIframe.createFrame(containerRef.current, {
         iframeStyle: {
           position: 'absolute',
           top: 0, left: 0,
@@ -45,17 +79,26 @@ const ClassRoom = () => {
         showLeaveButton: true,
         showFullscreenButton: true,
       });
+
       frameRef.current = frame;
+
       frame.on('left-meeting', () => {
         setJoined(false);
-        frame.destroy();
+        try { frame.destroy(); } catch {}
         frameRef.current = null;
       });
-      await frame.join({ url: cls.roomUrl, userName: name });
+
+      frame.on('error', (e: any) => {
+        console.error('Daily error:', e);
+        setError('Connection error. Please try again.');
+        setJoining(false);
+      });
+
+      await frame.join({ url: cls.roomUrl, userName: name.trim() });
       setJoined(true);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to join. Please try again.');
+    } catch (err: any) {
+      console.error('Join failed:', err);
+      setError(err?.message || 'Failed to join. Please try again.');
     } finally {
       setJoining(false);
     }
@@ -64,7 +107,7 @@ const ClassRoom = () => {
   useEffect(() => {
     return () => {
       if (frameRef.current) {
-        frameRef.current.destroy();
+        try { frameRef.current.destroy(); } catch {}
         frameRef.current = null;
       }
     };
@@ -123,7 +166,10 @@ const ClassRoom = () => {
         <p className="text-stone-400 mb-8">{cls.date} at {cls.time} · {cls.duration} min</p>
 
         {/* Video Container */}
-        <div className="relative bg-stone-800 rounded-2xl overflow-hidden" style={{ paddingBottom: joined ? '0' : undefined, height: joined ? '600px' : undefined }}>
+        <div
+          className="relative bg-stone-800 rounded-2xl overflow-hidden"
+          style={{ height: joined ? '600px' : 'auto' }}
+        >
           <div ref={containerRef} className="absolute inset-0" />
 
           {!joined && (
@@ -132,7 +178,7 @@ const ClassRoom = () => {
                 <div className="text-center">
                   <Lock size={48} className="text-stone-500 mx-auto mb-4" />
                   <p className="text-stone-300 text-xl font-serif mb-2">Class Not Started Yet</p>
-                  <p className="text-stone-500 text-sm">This class is scheduled for {cls.date} at {cls.time}.</p>
+                  <p className="text-stone-500 text-sm">Scheduled for {cls.date} at {cls.time}.</p>
                   <p className="text-stone-500 text-sm mt-1">The join button will appear when the admin goes live.</p>
                 </div>
               ) : (
@@ -150,20 +196,30 @@ const ClassRoom = () => {
                     placeholder="Your full name"
                     className="w-full px-4 py-3 bg-stone-600 text-white rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 placeholder-stone-400 mb-4"
                   />
+                  {error && (
+                    <p className="text-red-400 text-sm mb-4">{error}</p>
+                  )}
                   <button
                     onClick={handleJoin}
                     disabled={joining || !name.trim()}
                     className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
                   >
-                    {joining ? <><Loader2 size={16} className="animate-spin" /> Joining...</> : 'Join Class Now'}
+                    {joining ? (
+                      <><Loader2 size={16} className="animate-spin" /> Connecting...</>
+                    ) : (
+                      'Join Class Now'
+                    )}
                   </button>
+                  {joining && (
+                    <p className="text-stone-400 text-xs mt-3">Loading video — this may take a few seconds...</p>
+                  )}
                 </div>
               )}
             </div>
           )}
         </div>
 
-        {/* Class Info Below */}
+        {/* Class Info */}
         {!joined && (
           <div className="mt-8 bg-stone-800 rounded-2xl p-6">
             <h3 className="text-white font-serif font-bold text-xl mb-3">About This Class</h3>
