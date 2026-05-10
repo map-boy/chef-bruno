@@ -1,16 +1,15 @@
-// FILE: src/firebase.ts
-import { initializeApp } from 'firebase/app';
+﻿import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: "AIzaSyAiaxrp5nhi9FuCF_6c2mO8hDfSwTYfINY",
+  authDomain: "chef-bruno-a51bb.firebaseapp.com",
+  projectId: "chef-bruno-a51bb",
+  storageBucket: "chef-bruno-a51bb.firebasestorage.app",
+  messagingSenderId: "64152890922",
+  appId: "1:64152890922:web:55e915b52ef72a86f95d53",
 };
 
 const app = initializeApp(firebaseConfig);
@@ -21,8 +20,8 @@ export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
 export const ADMIN_EMAILS = [
-  'shimirwabruno1@gmail.com',  // Owner - Chef Bruno
-  'umwemubi@gmail.com',         // Developer - You
+  'shimirwabruno1@gmail.com',
+  'umwemubi@gmail.com',
 ];
 
 export default app;

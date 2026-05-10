@@ -10,33 +10,48 @@ interface Props {
   onNavigate: (tab: TabName) => void;
 }
 
-const SECTORS: { id: ProductCategory; label: string; emoji: string; bg: string }[] = [
-  { id: 'food',        label: 'Food & Catering',  emoji: '🍗', bg: 'linear-gradient(135deg,#FF6B35,#FF8C42)' },
-  { id: 'hospitality', label: 'Hotels & Stays',   emoji: '🏨', bg: 'linear-gradient(135deg,#4ECDC4,#44AF9A)' },
-  { id: 'minerals',    label: 'Minerals & Oil',   emoji: '⛏️', bg: 'linear-gradient(135deg,#FFD700,#FFA500)' },
-  { id: 'automobile',  label: 'Automobiles',      emoji: '🚗', bg: 'linear-gradient(135deg,#2E86AB,#1D6FA4)' },
-  { id: 'realestate',  label: 'Real Estate',      emoji: '🏡', bg: 'linear-gradient(135deg,#A8DADC,#6DB4B8)' },
-  { id: 'services',    label: 'Services',         emoji: '🧹', bg: 'linear-gradient(135deg,#C77DFF,#9B59B6)' },
-  { id: 'talent',      label: 'Talent & Career',  emoji: '🎯', bg: 'linear-gradient(135deg,#06D6A0,#04A07A)' },
-  { id: 'other',       label: 'Other',            emoji: '📦', bg: 'linear-gradient(135deg,#6C757D,#495057)' },
+const G = {
+  gold:    '#C9973A',
+  goldL:   '#E8BB6A',
+  white:   '#FFFFFF',
+  bg:      '#F0EBE0',
+  card:    '#FFFFFF',
+  border:  '#E2D9C8',
+  text:    '#1A1209',
+  muted:   '#7A6A52',
+  inputBg: '#FAF7F2',
+};
+
+const SECTORS: { id: ProductCategory; label: string; emoji: string }[] = [
+  { id: 'food',        label: 'Food',      emoji: '🍗' },
+  { id: 'hospitality', label: 'Hotels',    emoji: '🏨' },
+  { id: 'minerals',    label: 'Minerals',  emoji: '⛏️' },
+  { id: 'automobile',  label: 'Cars',      emoji: '🚗' },
+  { id: 'realestate',  label: 'Property',  emoji: '🏡' },
+  { id: 'services',    label: 'Services',  emoji: '🧹' },
+  { id: 'talent',      label: 'Talent',    emoji: '🎯' },
+  { id: 'other',       label: 'Other',     emoji: '📦' },
 ];
 
 export default function AppMarket({ firebaseUser, onNavigate }: Props) {
   const [activeCategory, setActiveCategory] = useState<ProductCategory | 'all'>('all');
-  const [products, setProducts]   = useState<Product[]>([]);
-  const [loading, setLoading]     = useState(false);
-  const [search, setSearch]       = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading]   = useState(false);
+  const [search, setSearch]     = useState('');
 
-  useEffect(() => {
-    fetchProducts();
-  }, [activeCategory]);
+  useEffect(() => { fetchProducts(); }, [activeCategory]);
 
   const fetchProducts = async () => {
     setLoading(true);
     try {
       let q;
       if (activeCategory === 'all') {
-        q = query(collection(db, 'products'), where('status', '==', 'active'), orderBy('createdAt', 'desc'), limit(40));
+        q = query(
+          collection(db, 'products'),
+          where('status', '==', 'active'),
+          orderBy('createdAt', 'desc'),
+          limit(40)
+        );
       } else {
         q = query(
           collection(db, 'products'),
@@ -48,11 +63,8 @@ export default function AppMarket({ firebaseUser, onNavigate }: Props) {
       }
       const snap = await getDocs(q);
       setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
   const filtered = search.trim()
@@ -63,92 +75,86 @@ export default function AppMarket({ firebaseUser, onNavigate }: Props) {
     : products;
 
   return (
-    <div style={{ background: '#0A0A0F', minHeight: '100vh', color: '#F0F0F5' }}>
+    <div style={{ background: G.bg, minHeight: '100vh' }}>
 
       {/* Header */}
       <div style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(10,10,15,0.95)', backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #1A1A2E',
+        background: G.white, borderBottom: `1px solid ${G.border}`,
         padding: '14px 16px 12px',
+        position: 'sticky', top: 0, zIndex: 50,
+        boxShadow: '0 1px 8px rgba(0,0,0,0.06)',
       }}>
-        <h2 style={{
-          margin: '0 0 12px', fontSize: 20, fontWeight: 800,
-          fontFamily: "'Syne', sans-serif",
-          background: 'linear-gradient(135deg, #FF6B35, #F7931E)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>
-          🛒 Marketplace
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <h2 style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: 20, fontWeight: 700, margin: 0,
+            background: `linear-gradient(135deg, ${G.gold}, ${G.goldL})`,
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          }}>Marketplace</h2>
+          <button onClick={() => onNavigate('profile')}
+            style={{
+              background: `linear-gradient(135deg, ${G.gold}, ${G.goldL})`,
+              border: 'none', borderRadius: 20, padding: '7px 14px',
+              color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer',
+              boxShadow: '0 3px 10px rgba(201,151,58,0.35)',
+            }}>+ List Item</button>
+        </div>
 
         {/* Search */}
-        <div style={{ position: 'relative' }}>
-          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 16 }}>🔍</span>
+        <div style={{ position: 'relative', marginBottom: 12 }}>
+          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 15 }}>🔍</span>
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search products, services..."
+            placeholder="Search products, services…"
             style={{
               width: '100%', boxSizing: 'border-box',
-              padding: '10px 12px 10px 38px',
-              background: '#111118', border: '1px solid #1E1E2E',
-              borderRadius: 12, color: '#F0F0F5', fontSize: 14,
-              fontFamily: 'sans-serif', outline: 'none',
+              padding: '10px 12px 10px 36px',
+              background: G.inputBg, border: `1.5px solid ${G.border}`,
+              borderRadius: 12, color: G.text, fontSize: 14, outline: 'none',
             }}
+            onFocus={e => { e.currentTarget.style.borderColor = G.gold; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,151,58,0.12)'; }}
+            onBlur={e => { e.currentTarget.style.borderColor = G.border; e.currentTarget.style.boxShadow = 'none'; }}
           />
+        </div>
+
+        {/* Category chips */}
+        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+          <button onClick={() => setActiveCategory('all')}
+            style={{
+              flexShrink: 0, padding: '6px 14px', borderRadius: 20, fontSize: 12,
+              border: activeCategory === 'all' ? 'none' : `1.5px solid ${G.border}`,
+              background: activeCategory === 'all' ? `linear-gradient(135deg, ${G.gold}, ${G.goldL})` : G.white,
+              color: activeCategory === 'all' ? '#fff' : G.muted,
+              cursor: 'pointer', fontWeight: activeCategory === 'all' ? 700 : 400,
+              boxShadow: activeCategory === 'all' ? '0 2px 8px rgba(201,151,58,0.3)' : 'none',
+            }}>🌍 All</button>
+          {SECTORS.map(s => (
+            <button key={s.id} onClick={() => setActiveCategory(s.id)}
+              style={{
+                flexShrink: 0, padding: '6px 14px', borderRadius: 20, fontSize: 12,
+                border: activeCategory === s.id ? 'none' : `1.5px solid ${G.border}`,
+                background: activeCategory === s.id ? `linear-gradient(135deg, ${G.gold}, ${G.goldL})` : G.white,
+                color: activeCategory === s.id ? '#fff' : G.muted,
+                cursor: 'pointer', fontWeight: activeCategory === s.id ? 700 : 400,
+                whiteSpace: 'nowrap',
+                boxShadow: activeCategory === s.id ? '0 2px 8px rgba(201,151,58,0.3)' : 'none',
+              }}>{s.emoji} {s.label}</button>
+          ))}
         </div>
       </div>
 
-      {/* Sectors Grid */}
-      <div style={{ padding: 16 }}>
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20,
-        }}>
-          <button
-            onClick={() => setActiveCategory('all')}
-            style={{
-              background: activeCategory === 'all' ? 'linear-gradient(135deg,#FF6B35,#F7931E)' : '#111118',
-              border: activeCategory === 'all' ? 'none' : '1px solid #1E1E2E',
-              borderRadius: 12, padding: '12px 4px', cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-            }}
-          >
-            <span style={{ fontSize: 22 }}>🌍</span>
-            <span style={{ fontSize: 10, color: activeCategory === 'all' ? '#fff' : '#888', fontFamily: 'sans-serif' }}>All</span>
-          </button>
-          {SECTORS.map(sector => (
-            <button
-              key={sector.id}
-              onClick={() => setActiveCategory(sector.id)}
-              style={{
-                background: activeCategory === sector.id ? sector.bg : '#111118',
-                border: activeCategory === sector.id ? 'none' : '1px solid #1E1E2E',
-                borderRadius: 12, padding: '12px 4px', cursor: 'pointer',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-              }}
-            >
-              <span style={{ fontSize: 22 }}>{sector.emoji}</span>
-              <span style={{
-                fontSize: 9, color: activeCategory === sector.id ? '#fff' : '#888',
-                fontFamily: 'sans-serif', textAlign: 'center', lineHeight: 1.2,
-              }}>{sector.label.split(' ')[0]}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Active Category Label */}
+      {/* Content */}
+      <div style={{ padding: '14px 14px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, fontFamily: 'sans-serif', color: '#F0F0F5' }}>
+          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: G.text }}>
             {activeCategory === 'all' ? 'All Products & Services' : CATEGORY_META[activeCategory]?.label}
           </h3>
-          <span style={{ fontSize: 12, color: '#555570', fontFamily: 'sans-serif' }}>
-            {filtered.length} listings
-          </span>
+          <span style={{ fontSize: 12, color: G.muted }}>{filtered.length} listings</span>
         </div>
 
-        {/* Products Grid */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#555570' }}>Loading...</div>
+          <div style={{ textAlign: 'center', padding: '50px 0', color: G.muted }}>Loading…</div>
         ) : filtered.length === 0 ? (
           <EmptyState category={activeCategory} onNavigate={onNavigate} />
         ) : (
@@ -163,100 +169,78 @@ export default function AppMarket({ firebaseUser, onNavigate }: Props) {
   );
 }
 
-// ─── Product Card ─────────────────────────────────────────────────────────────
 function ProductCard({ product }: { product: Product }) {
   const meta = CATEGORY_META[product.category];
   return (
     <div style={{
-      background: '#111118', borderRadius: 14,
-      border: '1px solid #1A1A2E', overflow: 'hidden', cursor: 'pointer',
-    }}>
+      background: '#FFFFFF', borderRadius: 14,
+      border: '1px solid #E2D9C8', overflow: 'hidden', cursor: 'pointer',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+      transition: 'box-shadow 0.15s, transform 0.15s',
+    }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 20px rgba(201,151,58,0.15)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
+    >
       {/* Image */}
-      <div style={{
-        height: 120, background: '#1A1A2E',
-        position: 'relative', overflow: 'hidden',
-      }}>
+      <div style={{ height: 118, background: '#F0EBE0', position: 'relative', overflow: 'hidden' }}>
         {product.images?.[0] ? (
           <img src={product.images[0]} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
           <div style={{
-            width: '100%', height: '100%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36,
+            width: '100%', height: '100%', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', fontSize: 36,
           }}>{meta?.emoji}</div>
         )}
-        {/* Category badge */}
-        <span style={{
-          position: 'absolute', top: 6, left: 6,
-          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
-          borderRadius: 6, padding: '2px 7px', fontSize: 10,
-          color: meta?.color, fontFamily: 'sans-serif', fontWeight: 700,
-        }}>
-          {meta?.emoji} {meta?.label}
-        </span>
         {product.listingType === 'auction' && (
           <span style={{
             position: 'absolute', top: 6, right: 6,
-            background: '#FF6B35', borderRadius: 6,
-            padding: '2px 7px', fontSize: 10, color: '#fff', fontFamily: 'sans-serif',
+            background: `linear-gradient(135deg, #C9973A, #E8BB6A)`,
+            borderRadius: 6, padding: '2px 7px', fontSize: 9,
+            color: '#fff', fontWeight: 700,
           }}>AUCTION</span>
         )}
       </div>
 
       {/* Info */}
-      <div style={{ padding: '10px 10px 12px' }}>
+      <div style={{ padding: '9px 10px 11px' }}>
         <p style={{
-          margin: '0 0 4px', fontSize: 13, fontWeight: 700,
-          color: '#F0F0F5', fontFamily: 'sans-serif',
+          margin: '0 0 3px', fontSize: 12, fontWeight: 700, color: '#1A1209',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>{product.title}</p>
-        <p style={{
-          margin: '0 0 8px', fontSize: 11, color: '#555570', fontFamily: 'sans-serif',
-        }}>📍 {product.location}</p>
+        <p style={{ margin: '0 0 6px', fontSize: 10, color: '#7A6A52' }}>📍 {product.location}</p>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{
-            fontSize: 14, fontWeight: 800, color: '#FF6B35', fontFamily: 'sans-serif',
-          }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: '#C9973A' }}>
             {product.currency} {product.price.toLocaleString()}
           </span>
           {product.negotiable && (
-            <span style={{ fontSize: 10, color: '#06D6A0', fontFamily: 'sans-serif' }}>Negotiable</span>
+            <span style={{ fontSize: 9, color: '#16A34A', fontWeight: 700 }}>Negotiable</span>
           )}
         </div>
-        {/* Seller */}
-        <p style={{ margin: '6px 0 0', fontSize: 11, color: '#444460', fontFamily: 'sans-serif' }}>
-          by {product.sellerName}
-        </p>
+        <p style={{ margin: '5px 0 0', fontSize: 10, color: '#A89880' }}>by {product.sellerName}</p>
       </div>
     </div>
   );
 }
 
-// ─── Empty State ──────────────────────────────────────────────────────────────
 function EmptyState({ category, onNavigate }: { category: ProductCategory | 'all'; onNavigate: (t: TabName) => void }) {
   const meta = category !== 'all' ? CATEGORY_META[category] : null;
   return (
     <div style={{
-      background: '#111118', borderRadius: 16, padding: '40px 24px', textAlign: 'center',
-      border: '1px solid #1A1A2E',
+      background: '#FFFFFF', borderRadius: 16, padding: '44px 24px', textAlign: 'center',
+      border: '1px solid #E2D9C8', boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
     }}>
       <div style={{ fontSize: 48, marginBottom: 12 }}>{meta?.emoji || '🛒'}</div>
-      <p style={{ color: '#F0F0F5', fontWeight: 700, fontFamily: 'sans-serif', marginBottom: 8 }}>
-        No listings yet
-      </p>
-      <p style={{ color: '#555570', fontSize: 13, fontFamily: 'sans-serif', marginBottom: 20 }}>
+      <p style={{ color: '#1A1209', fontWeight: 700, fontSize: 15, marginBottom: 6 }}>No listings yet</p>
+      <p style={{ color: '#7A6A52', fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
         {meta ? `No ${meta.label} listings posted yet.` : 'No products listed yet.'} Be the first!
       </p>
-      <button
-        onClick={() => onNavigate('profile')}
+      <button onClick={() => onNavigate('profile')}
         style={{
-          background: 'linear-gradient(135deg, #FF6B35, #F7931E)',
+          background: 'linear-gradient(135deg, #C9973A, #E8BB6A)',
           border: 'none', borderRadius: 12, color: '#fff',
           padding: '12px 28px', fontSize: 14, fontWeight: 700,
-          cursor: 'pointer', fontFamily: 'sans-serif',
-        }}
-      >
-        + List Your Product
-      </button>
+          cursor: 'pointer', boxShadow: '0 4px 14px rgba(201,151,58,0.4)',
+        }}>+ List Your Product</button>
     </div>
   );
 }
