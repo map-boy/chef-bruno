@@ -357,6 +357,45 @@ export default function AppProfile({ firebaseUser, onNavigate }: Props) {
         )}
       </div>
 
+      {/* ── Powered By ─────────────────────────────────────── */}
+      <div style={{
+        margin: "24px 12px 12px",
+        padding: "18px 16px",
+        background: G.white,
+        border: `1px solid ${G.border}`,
+        borderRadius: 16,
+        display: "flex", flexDirection: "column",
+        alignItems: "center", gap: 6,
+        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+      }}>
+        <p style={{ margin: 0, fontSize: 10, color: G.muted, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>
+          Powered by
+        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: 6,
+            background: `linear-gradient(135deg, ${G.gold}, ${G.goldL})`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 800, color: "#fff",
+            fontFamily: "'Playfair Display', serif",
+          }}>V</div>
+          <p style={{
+            margin: 0, fontSize: 15, fontWeight: 800, color: G.text,
+            fontFamily: "'Playfair Display', serif", letterSpacing: 0.5,
+          }}>
+            VAF{" "}
+            <span style={{
+              background: `linear-gradient(135deg, ${G.gold}, ${G.goldL})`,
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            }}>UBWENGE</span>{" "}
+            TECH
+          </p>
+        </div>
+        <p style={{ margin: 0, fontSize: 11, color: G.muted }}>
+          Building digital solutions for Africa 🌍
+        </p>
+      </div>
+
       {/* ── Edit Profile Modal ──────────────────────────────── */}
       {editing && (
         <div style={{
